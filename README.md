@@ -14,13 +14,7 @@ MOUSE_BTN2 script_message popup_menu
 
 Now when the script runs, and you trigger the action, a pop-up menu should appear.
 
-If you want the script to run with mpv, there's an easy way. Add a lua script (*something.lua* in *scripts* directory in mpv's configuration dir) witht he following contents:
-
-```
-io.popen("/some/path/mpvmenu")
-```
-
-replacing the path with the one you've put the script in.
+If you want the script to run with mpv, there's an easy way. Add a mpvmenu.lua script (in *scripts* directory in mpv's configuration dir) and change a path to where you've put the mpvmenu script.
 
 ## Requirements
 * GNU/Linux (possibly other *NIX OSes), as JSON RPC is only supported on that.
