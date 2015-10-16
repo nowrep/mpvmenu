@@ -4,19 +4,11 @@
 Mpvmenu adds a pop-up menu to mpv, which can be bound to a key or button (e.g. to mouse right-click). From this menu you can do things like loading external subtitle files, dynamically adding/removing filters and so on.
 
 ## Installation 
-Copy the script *mpvmenu* anywhere convenient, if you want. Make it executable (or you can run it via python 3).
+Copy the script *mpvmenu* anywhere convenient and make it executable.
 
-You'll probably want to bind it to a key/button. To do that, bind action *script_message popup_menu*. For example, to bind to right mouse button, add the following to your *input.conf*:
+Copy the script *mpvmenu.lua* into a *scripts* mpv directory (most probably in *~/.config/mpv/scripts). Edit the script and change the `mpvmenu_path` variable to full path where you've put the *mpvmenu* script.
 
-```
-MOUSE_BTN2 script_message popup_menu
-```
-
-Now when the script runs, and you trigger the action, a pop-up menu should appear.
-
-If you want the script to run with mpv, there's an easy way. Add a mpvmenu.lua script (in *scripts* directory in mpv's configuration dir) and change a path to where you've put the mpvmenu script.
-
-You also need to setup JSON RPC, add this to mpv config (~/.config/mpv/config):
+You also need to setup JSON RPC, add this to mpv config (*~/.config/mpv/config*):
 
 ```
 input-unix-socket = /tmp/mpv.sock
