@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import sys
 import socket
 import os
 import json
 import subprocess
 import os.path
 
-from gi.repository import Gtk
+from PyQt4 import QtGui
 
 DEBUG = 2
 WARNING = 1
@@ -174,17 +175,7 @@ def to_abs_path(path):
 
 
 def load_file_run_dialog(title):
-    dialog = Gtk.FileChooserDialog(title, None,
-                                   Gtk.FileChooserAction.OPEN,
-                                   (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                    Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-    dialog.set_current_folder(os.path.dirname(
-                              to_abs_path(rpc.get_prop("path"))))
-    filename = ""
-    if (dialog.run() == Gtk.ResponseType.OK):
-        filename = dialog.get_filename()
-    dialog.destroy()
-    return filename
+    return QtGui.QFileDialog.getOpenFileName(None, title, work_dir)
 
 
 def load_sub_file():
@@ -212,25 +203,16 @@ def post_menu_action_factory(act):
 def dl_subs():
     path = to_abs_path(rpc.get_prop("path"))
     try:
-        subprocess.call(["subdownloader", "--rename-subs", "-V", path])
+        subprocess.call(["subliminal", "download", "-s", "-l", "en", path])
         rpc.command("rescan_external_files")
         rpc.set_prop("sid", rpc.get_prop("sid") + 1)  # switch to the next sub
     except OSError:
-        dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.INFO,
-                                   Gtk.ButtonsType.OK,
-                                   "Subdownloader required")
-        dialog.format_secondary_text("Currently, this option requires" +
-                                     "\nsubdownloader to be installed.")
-        dialog.run()
-        dialog.destroy()
+        msg(WARNING, "Subliminal required",
+        "Currently, this option requires subliminal to be installed.")
 
 
 def about():
-    dialog = Gtk.AboutDialog(program_name="MPVMenu",
-                             comments="Popup menu for MPV",
-                             logo_icon_name="")
-    dialog.run()
-    dialog.destroy()
+    QtGui.QMessageBox.about(None, "MPVMenu", "Popup menu for MPV")
 
 
 class Layout:
@@ -327,67 +309,33 @@ layout = Layout(
     Layout("Help", OPT("About", activate=about)),
 )
 
-
-class Menu(Gtk.Menu):
+class Menu(QtGui.QMenu):
     def __init__(self, layout):
-        Gtk.Menu.__init__(self)
+        QtGui.QMenu.__init__(self)
         self.process_layout(layout)
-        self.action = ""
-        self.show_all()
-        self.connect("selection-done",
-                     self.on_selection_done)
-        self.popup(None, None,
-                   None, None,
-                   2,
-                   Gtk.get_current_event_time())
-        self.activation_handled = False
-
-    def on_selection_done(self, widget):
-        Gtk.main_quit()
-        return True
-
-    def on_menu_item_activate(self, widget):
-        global action
-        if not self.activation_handled:
-            widget.activate()
-            self.activation_handled = True
-        return True
-
-    def on_menu_item_btn(self, widget, evt):
-        if evt.button != 1:
-            return False
-        return self.on_menu_item_activate(widget)
+        self.exec_(QtGui.QCursor.pos())
 
     def process_layout(self, layout, menu=None):
         if not menu:
             menu = self
         for item in layout.items:
             if isinstance(item, Layout):
-                menu_item = Gtk.MenuItem(item.name)
-                submenu = Gtk.Menu()
-                menu_item.set_submenu(submenu)
-                menu.append(menu_item)
+                action = menu.addAction(item.name)
+                submenu = QtGui.QMenu()
+                action.setMenu(submenu)
                 self.process_layout(item, submenu)
             else:
                 if item.typ == OPT.SEP:
-                    menu_item = Gtk.SeparatorMenuItem()
+                    menu.addSeparator()
                 else:
                     item.init()
-                    if item.typ == OPT.CHECK:
-                        menu_item = Gtk.CheckMenuItem(item.name)
-                        menu_item.set_active(item.state)
-                    else:
-                        menu_item = Gtk.MenuItem(item.name)
-                    menu_item.activate = item.activate
-                    menu_item.connect("activate",
-                                      self.on_menu_item_activate)
-                    # workaround for bug #695488
-                    menu_item.connect("button-press-event",
-                                      self.on_menu_item_btn)
-                menu.append(menu_item)
+                    action = menu.addAction(item.name)
+                    if (item.typ == OPT.CHECK):
+                        action.setCheckable(True)
+                        action.setChecked(item.state)
+                    action.triggered.connect(item.activate)
 
-
-rpc = RPC("/var/run/user/{}/mpv.sock".format(os.getuid()))
+rpc = RPC("/tmp/mpv.sock")
 
 work_dir = rpc.get_prop("working-directory")
 if not work_dir:
@@ -396,6 +344,11 @@ if not work_dir:
     work_dir = os.getcwd()
 
 post_menu_action = None
+
+app = QtGui.QApplication(sys.argv)
+app.setWindowIcon(QtGui.QIcon.fromTheme("mpv"))
+
+menu = Menu(layout)
 
 while True:
     dat = rpc.recv_data()
@@ -407,7 +360,8 @@ while True:
         if dat["event"] == "client-message" and \
            dat["args"][0] == "popup_menu":
             menu = Menu(layout)
-            Gtk.main()
             if post_menu_action:
                 post_menu_action()
                 post_menu_action = None
+
+sys.exit(0)

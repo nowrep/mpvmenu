@@ -16,12 +16,15 @@ Now when the script runs, and you trigger the action, a pop-up menu should appea
 
 If you want the script to run with mpv, there's an easy way. Add a mpvmenu.lua script (in *scripts* directory in mpv's configuration dir) and change a path to where you've put the mpvmenu script.
 
+You also need to setup JSON RPC, add this to mpv config (~/.config/mpv/config):
+
+```
+input-unix-socket = /tmp/mpv.sock
+```
+
 ## Requirements
 * GNU/Linux (possibly other *NIX OSes), as JSON RPC is only supported on that.
 * Python 3.
-* Python 3 bindings for Gobject.
-* Gtk 3.
+* PyQt4.
 * MPV (latest version from master to get all functionality to work).
-* Subtitle download option requires subdownloader.
-
-On Archlinux, the relevant packages are: **python-gobject**, **gtk3**, **subdownloader** and **mpv** (or **mpv-git** from *AUR*).
+* Subtitle download option requires subliminal.
